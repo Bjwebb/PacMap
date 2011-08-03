@@ -1,0 +1,157 @@
+<html>
+  <head>
+    <title>OpenLayers Demo</title>
+    <style type="text/css">
+      html, body, #basicMap {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+      }
+    </style>
+    <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+    <script>
+    var marker;
+      function init() {
+        map = new OpenLayers.Map("basicMap");
+        var mapnik = new OpenLayers.Layer.OSM();
+        map.addLayer(mapnik);
+        map.setCenter(new OpenLayers.LonLat(-2.12,53.47) // Center of the map
+          .transform(
+            new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+            new OpenLayers.Projection("EPSG:900913") // to Spherical Mercator Projection
+          ), 16 // Zoom level
+        );
+        
+        var lonLat = new OpenLayers.LonLat(-2.12,53.47)
+          .transform(
+            new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+            map.getProjectionObject() // to Spherical Mercator Projection
+          );
+ 
+        marker = new OpenLayers.Marker(lonLat);
+        var markers = new OpenLayers.Layer.Markers( "Markers" );
+        map.addLayer(markers);
+ 
+        markers.addMarker(marker);
+        
+        redraw(); 
+      }
+    </script>
+    <script type="text/javascript">
+        var target_lat = 53.4696314;
+        var target_lon = -2.1249962;
+        var min_lat = 53.4696314;
+        var max_lat = 53.4742037;
+        var min_lon = -2.1249962;
+        var max_lon = -2.1183014;
+        var first = true;
+        var doMove = false;
+        var lon = lat = nextlon = nextlat = startlon = startlat = 0;
+        function _callback(d) {
+            data = d;
+            for (var ref in data["nodes"]) {
+                node = ref;
+                break;
+            }
+            setInterval(move,200)
+        }
+        function move() {
+            h = Math.sqrt((nextlon-startlon)*(nextlon-startlon)+(nextlat-startlat)*(nextlat-startlat));
+            lon += (nextlon-startlon)/h * 0.0001;
+            lat += (nextlat-startlat)/h * 0.0001;
+            if (first || (nextlon-startlon) * (nextlon-lon) < 0) {
+                if (!first) node = nextnode;
+                first = false;
+                var bestdist;
+                for (var i = 0; i < data["nodes"][node]["join"].length; i++) {
+                    nextlon = parseFloat(data["nodes"][data["nodes"][node]["join"][i]]["lon"]);
+                    nextlat = parseFloat(data["nodes"][data["nodes"][node]["join"][i]]["lat"]);
+                    var dist = Math.sqrt((target_lat-nextlat)*(target_lat-nextlat) + (target_lon-nextlon)*(target_lon-nextlon));
+                    if (i==0 || dist < bestdist) {
+                        bestdist = dist;
+                        nextnode = data["nodes"][node]["join"][i];
+                    }
+                }
+                startlon = parseFloat(data["nodes"][node]["lon"]);
+                startlat = parseFloat(data["nodes"][node]["lat"]);
+                nextlon = parseFloat(data["nodes"][nextnode]["lon"]);
+                nextlat = parseFloat(data["nodes"][nextnode]["lat"]);
+                lon = startlon; lat = startlat;
+            }
+            var lonLat = new OpenLayers.LonLat(lon,lat)
+                .transform(
+                  new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+                  map.getProjectionObject() // to Spherical Mercator Projection
+                );
+            marker.moveTo(map.getLayerPxFromViewPortPx(map.getPixelFromLonLat(lonLat)));
+        }
+        function redraw() {
+            bbox = min_lon+","+min_lat+","+max_lon+","+max_lat;
+            
+            var script = document.createElement("script");
+            script.setAttribute("src", "http://td.cu-nts.co.uk/osm/js2.py/data?bbox=" + bbox);
+            script.setAttribute("type", "text/javascript")
+            document.getElementsByTagName("head")[0].appendChild(script); 
+        }
+        function handleClick(e) {                
+            var posx = 0;
+            var posy = 0;
+            if (!e) var e = window.event;
+            if (e.pageX || e.pageY) 	{
+                    posx = e.pageX;
+                    posy = e.pageY;
+            }
+            else if (e.clientX || e.clientY) 	{
+                    posx = e.clientX + document.body.scrollLeft
+                            + document.documentElement.scrollLeft;
+                    posy = e.clientY + document.body.scrollTop
+                            + document.documentElement.scrollTop;
+            }
+            px = new OpenLayers.Pixel(parseInt(posx),parseInt(posy));
+            ll = map.getLonLatFromViewPortPx(px).transform(
+                      map.getProjectionObject(), // to Spherical Mercator Projection
+                      new OpenLayers.Projection("EPSG:4326") // transform from WGS 1984
+                    );
+            target_lat = ll.lat;
+            target_lon = ll.lon;
+        }
+        document.onclick = handleClick;
+        
+        /*function handleKeyDown(evt) {
+            evt = (evt) ? evt : ((window.event) ? event : null);
+            if (evt) {
+                switch (evt.keyCode) {
+                    case 37:
+                        doMove = true;
+                        break;    
+                    case 38:
+                        break;    
+                    case 39:
+                        break;    
+                    case 40:
+                        break;    
+                }
+            }
+        }
+        function handleKeyUp(evt) {
+            evt = (evt) ? evt : ((window.event) ? event : null);
+            if (evt) {
+                switch (evt.keyCode) {
+                    case 37:
+                    case 38:  
+                    case 39:  
+                    case 40:
+                        doMove = false;
+                        break;    
+                }
+            }
+        }
+
+        document.onkeydown = handleKeyDown;
+        document.onkeyup = handleKeyUp;*/
+    </script>
+  </head>
+  <body onload="init();">
+    <div id="basicMap"></div>
+  </body>
+</html>
