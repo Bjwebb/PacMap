@@ -10,7 +10,7 @@
     </style>
     <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
     <script>
-    var marker;
+    var marker;var dots;
     //var clon = -2.12;
     //var clat = 53.47;
     var clon = -2.237;
@@ -32,9 +32,11 @@
             map.getProjectionObject() // to Spherical Mercator Projection
           );
  
-        marker = new OpenLayers.Marker(lonLat);
+        marker = new OpenLayers.Marker(lonLat, new OpenLayers.Icon("pac.png"));
         var markers = new OpenLayers.Layer.Markers( "Markers" );
+        dots = new OpenLayers.Layer.Markers( "Dots" );
         map.addLayer(markers);
+        map.addLayer(dots);
  
         markers.addMarker(marker);
         
@@ -57,7 +59,22 @@
             data = d;
             for (var ref in data["nodes"]) {
                 node = ref;
-                break;
+                if (data["nodes"][node]["join"].length > 0) {
+                    break;
+                }
+            }
+            for (var ref in data["nodes"]) {
+                if (data["nodes"][ref]["join"].length > 0) {
+                    var lonLat = new OpenLayers.LonLat(data["nodes"][ref]["lon"], data["nodes"][ref]["lat"])
+                      .transform(
+                        new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+                        map.getProjectionObject() // to Spherical Mercator Projection
+                      );
+                    var dot = new OpenLayers.Marker(lonLat, new OpenLayers.Icon("dot.png"));
+                    dots.addMarker(dot);
+                    node = ref;
+                    data["nodes"][ref]["dot"] = dot;
+                }
             }
             if (first) intervalID = setInterval(move,100);
         }
@@ -66,7 +83,10 @@
             lon += (nextlon-startlon)/h * 0.0001;
             lat += (nextlat-startlat)/h * 0.0001;
             if (first || (nextlon-startlon) * (nextlon-lon) < 0) {
-                if (!first) node = nextnode;
+                if (!first) {
+                    data["nodes"][nextnode]["dot"].display(false);
+                    node = nextnode;
+                }
                 first = false;
                 var bestdist;
                 for (var i = 0; i < data["nodes"][node]["join"].length; i++) {
