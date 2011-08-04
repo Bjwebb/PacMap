@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>OpenLayers Demo</title>
+    <title>PacMap</title>
     <style type="text/css">
       html, body, #basicMap {
           width: 100%;
@@ -11,11 +11,15 @@
     <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
     <script>
     var marker;
+    //var clon = -2.12;
+    //var clat = 53.47;
+    var clon = -2.237;
+    var clat = 53.484;
       function init() {
         map = new OpenLayers.Map("basicMap");
         var mapnik = new OpenLayers.Layer.OSM();
         map.addLayer(mapnik);
-        map.setCenter(new OpenLayers.LonLat(-2.12,53.47) // Center of the map
+        map.setCenter(new OpenLayers.LonLat(clon,clat) // Center of the map
           .transform(
             new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
             new OpenLayers.Projection("EPSG:900913") // to Spherical Mercator Projection
@@ -38,12 +42,14 @@
       }
     </script>
     <script type="text/javascript">
-        var target_lat = 53.4696314;
-        var target_lon = -2.1249962;
-        var min_lat = 53.4696314;
-        var max_lat = 53.4742037;
-        var min_lon = -2.1249962;
-        var max_lon = -2.1183014;
+        var target_lat = clat;
+        var target_lon = clon;
+        var min_lat;
+        var max_lat;
+        var min_lon;
+        var max_lon;
+        var node;
+        var intervalID;
         var first = true;
         var doMove = false;
         var lon = lat = nextlon = nextlat = startlon = startlat = 0;
@@ -53,7 +59,7 @@
                 node = ref;
                 break;
             }
-            setInterval(move,200)
+            if (first) intervalID = setInterval(move,100);
         }
         function move() {
             h = Math.sqrt((nextlon-startlon)*(nextlon-startlon)+(nextlat-startlat)*(nextlat-startlat));
@@ -86,14 +92,18 @@
             marker.moveTo(map.getLayerPxFromViewPortPx(map.getPixelFromLonLat(lonLat)));
         }
         function redraw() {
+            var min_lat = clat-0.005;
+            var max_lat = clat+0.005;
+            var min_lon = clon-0.005;
+            var max_lon = clon+0.005;
             bbox = min_lon+","+min_lat+","+max_lon+","+max_lat;
             
             var script = document.createElement("script");
-            script.setAttribute("src", "http://td.cu-nts.co.uk/osm/js2.py/data?bbox=" + bbox);
-            script.setAttribute("type", "text/javascript")
+            script.setAttribute("src", "http://xn--gce.com:81/pacmap/osm.py/data?bbox=" + bbox);
+            script.setAttribute("type", "text/javascript");
             document.getElementsByTagName("head")[0].appendChild(script); 
         }
-        function handleClick(e) {                
+        function handleMove(e) {                
             var posx = 0;
             var posy = 0;
             if (!e) var e = window.event;
@@ -109,31 +119,48 @@
             }
             px = new OpenLayers.Pixel(parseInt(posx),parseInt(posy));
             ll = map.getLonLatFromViewPortPx(px).transform(
-                      map.getProjectionObject(), // to Spherical Mercator Projection
-                      new OpenLayers.Projection("EPSG:4326") // transform from WGS 1984
+                      map.getProjectionObject(),
+                      new OpenLayers.Projection("EPSG:4326")
                     );
             target_lat = ll.lat;
             target_lon = ll.lon;
         }
-        document.onclick = handleClick;
+        //document.onclick = handleClick;
+        document.onmousemove = handleMove;
         
-        /*function handleKeyDown(evt) {
+        function handleKeyDown(evt) {
             evt = (evt) ? evt : ((window.event) ? event : null);
             if (evt) {
                 switch (evt.keyCode) {
                     case 37:
-                        doMove = true;
+                        //doMove = true;
                         break;    
                     case 38:
+                        ll = map.getCenter().transform(
+                            map.getProjectionObject(),
+                            new OpenLayers.Projection("EPSG:4326")
+                          );
+                        clat = ll.lat;
+                        clon = ll.lon;
+                        clearInterval(intervalID);
+                        first = true;
+                        redraw();
                         break;    
                     case 39:
                         break;    
                     case 40:
+                        ll = map.getCenter().transform(
+                            map.getProjectionObject(),
+                            new OpenLayers.Projection("EPSG:4326")
+                          );
+                        clat = ll.lat;
+                        clon = ll.lon;
+                        redraw();
                         break;    
                 }
             }
         }
-        function handleKeyUp(evt) {
+        /*function handleKeyUp(evt) {
             evt = (evt) ? evt : ((window.event) ? event : null);
             if (evt) {
                 switch (evt.keyCode) {
@@ -145,10 +172,10 @@
                         break;    
                 }
             }
-        }
+        }*/
 
         document.onkeydown = handleKeyDown;
-        document.onkeyup = handleKeyUp;*/
+        //document.onkeyup = handleKeyUp;
     </script>
   </head>
   <body onload="init();">
