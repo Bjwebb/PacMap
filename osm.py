@@ -30,6 +30,13 @@ def data(req, bbox):
         nds = way.findall("nd")
         refs = []
         prev_ref = None
+        jway = {}
+        tags = way.findall("tag")
+        for tag in tags:
+            k = tag.get("k")
+            v = tag.get("v")
+            jway[k] = v
+        if not "highway" in jway: continue
         for nd in nds:
             ref = nd.get("ref")
             if prev_ref:
@@ -37,13 +44,7 @@ def data(req, bbox):
                 jnodes[prev_ref]["join"].append(ref)
             prev_ref = ref
             #refs.append(ref)
-        tags = way.findall("tag")
-        #jway = {}
         #jway["nds"] = refs
-        #for tag in tags:
-        #    k = tag.get("k")
-        #    v = tag.get("v")
-        #    jway[k] = v
         #jways.append( jway )
         
     data = { "bounds":jbounds, "ways":jways, "nodes":jnodes }
