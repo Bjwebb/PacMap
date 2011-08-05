@@ -119,7 +119,7 @@
             bbox = min_lon+","+min_lat+","+max_lon+","+max_lat;
             
             var script = document.createElement("script");
-            script.setAttribute("src", "http://xn--gce.com:81/pacmap/osm.py/data?bbox=" + bbox);
+            script.setAttribute("src", "http://xn--gce.com/pacmap/osm.py/data?bbox=" + bbox);
             script.setAttribute("type", "text/javascript");
             document.getElementsByTagName("head")[0].appendChild(script); 
         }
